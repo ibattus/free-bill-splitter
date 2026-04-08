@@ -2,6 +2,5 @@ node_modules/
 .env
 .DS_Store
 *.log
-backupbc-tg.sh
 bills/*.json
 bills/*.json.backup.*
