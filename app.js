@@ -27,6 +27,26 @@ class BillSplitter {
                 e.preventDefault();
                 this._moveNext(e.target);
             }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                this.saveBill();
+            }
+            if (e.key === 'Escape') this.closeModal();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('name-input') || e.target.classList.contains('amount-input') || e.target.tagName === 'INPUT') {
+                setTimeout(() => e.target.select(), 0);
+            }
+            if (e.target.contentEditable === 'true') {
+                setTimeout(() => {
+                    const range = document.createRange();
+                    range.selectNodeContents(e.target);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }, 0);
+            }
         });
 
         document.addEventListener('focus', (e) => {
@@ -35,17 +55,8 @@ class BillSplitter {
             }
         }, true);
 
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                this.saveBill();
-            }
-            if (e.key === 'Escape') this.closeModal();
-        });
-
-        const modal = document.getElementById('modal');
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.closeModal();
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.closeModal();
         });
     }
 
@@ -96,6 +107,43 @@ class BillSplitter {
         localStorage.setItem('billOwners', JSON.stringify(o));
     }
 
+    _getApiUrl(query = '') {
+        const path = window.location.pathname;
+        let base;
+        if (path.includes('index.html')) {
+            base = path.replace('index.html', 'api.php');
+        } else {
+            base = path.endsWith('/') ? path + 'api.php' : path + '/api.php';
+        }
+        return query ? `${base}?${query}` : base;
+    }
+
+    _copyToClipboard(text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).catch(() => this._fallbackCopy(text));
+        } else {
+            this._fallbackCopy(text);
+        }
+    }
+
+    _fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+    }
+
+    _headerRowHTML() {
+        return `
+            <th class="col-name">Person</th>
+            <th class="col-item" contenteditable="true">Item 1</th>
+            <th class="col-add no-print"><button onclick="BillSplitter.addItem()" aria-label="Add item">+</button></th>
+            <th class="col-total">Total</th>
+            <th class="col-action no-print"></th>`;
+    }
+
     addPerson() {
         if (!this.isOwner) return;
         this.personCount++;
@@ -119,8 +167,12 @@ class BillSplitter {
 
         tbody.appendChild(row);
         this.calculate();
-        row.querySelector('.name-input').focus();
-        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (this._initialized) {
+            const nameInput = row.querySelector('.name-input');
+            nameInput.focus();
+            nameInput.select();
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     removePerson(btn) {
@@ -144,7 +196,6 @@ class BillSplitter {
 
         const headerRow = document.getElementById('headerRow');
         const addCol = headerRow.querySelector('.col-add');
-        const totalCol = headerRow.querySelector('.col-total');
 
         const th = document.createElement('th');
         th.className = 'col-item';
@@ -163,6 +214,11 @@ class BillSplitter {
         this._updateFooterColspan();
         this.calculate();
         th.focus();
+        const range = document.createRange();
+        range.selectNodeContents(th);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
 
     _updateFooterColspan() {
@@ -219,8 +275,7 @@ class BillSplitter {
     _collectData() {
         const items = [];
         const headerRow = document.getElementById('headerRow');
-        const ths = headerRow.querySelectorAll('.col-item');
-        ths.forEach(th => items.push(th.textContent.trim()));
+        headerRow.querySelectorAll('.col-item').forEach(th => items.push(th.textContent.trim()));
 
         const people = [];
         const rows = document.getElementById('tableBody').children;
@@ -264,15 +319,7 @@ class BillSplitter {
 
         let serverOk = false;
         try {
-            const path = window.location.pathname;
-            let apiUrl;
-            if (path.includes('index.html')) {
-                apiUrl = path.replace('index.html', 'api.php');
-            } else {
-                apiUrl = path.endsWith('/') ? path + 'api.php' : path + '/api.php';
-            }
-
-            const res = await fetch(apiUrl, {
+            const res = await fetch(this._getApiUrl(), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...data, billId })
@@ -287,30 +334,9 @@ class BillSplitter {
         }
 
         const url = `${window.location.origin}${window.location.pathname}?${billId}`;
+        this._copyToClipboard(url);
 
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).catch(() => {
-                const ta = document.createElement('textarea');
-                ta.value = url;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                ta.remove();
-            });
-        } else {
-            const ta = document.createElement('textarea');
-            ta.value = url;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-        }
-
-        if (serverOk) {
-            this._toast('Link copied to clipboard', 'success');
-        } else {
-            this._toast('Bill saved locally (server unavailable)', 'info');
-        }
+        this._toast(serverOk ? 'Link copied to clipboard' : 'Bill saved locally (server unavailable)', serverOk ? 'success' : 'info');
 
         setTimeout(() => {
             btn.innerHTML = origHTML;
@@ -329,21 +355,14 @@ class BillSplitter {
             this.addPerson();
             this.calculate();
         }
+        this._initialized = true;
     }
 
     async _loadBill(billId) {
         let data = null;
 
         try {
-            const path = window.location.pathname;
-            let apiUrl;
-            if (path.includes('index.html')) {
-                apiUrl = path.replace('index.html', 'api.php');
-            } else {
-                apiUrl = path.endsWith('/') ? path + 'api.php' : path + '/api.php';
-            }
-
-            const res = await fetch(`${apiUrl}?id=${billId}`);
+            const res = await fetch(this._getApiUrl(`id=${billId}`));
             if (res.ok) data = await res.json();
         } catch (e) {
             console.log('Server load failed:', e);
@@ -372,13 +391,7 @@ class BillSplitter {
         document.getElementById('gstRate').value = data.gstRate || 8;
 
         const headerRow = document.getElementById('headerRow');
-        headerRow.innerHTML = `
-            <th class="col-name">Person</th>
-            <th class="col-item" contenteditable="true">Item 1</th>
-            <th class="col-add no-print"><button onclick="BillSplitter.instance.addItem()" aria-label="Add item">+</button></th>
-            <th class="col-total">Total</th>
-            <th class="col-action no-print"></th>
-        `;
+        headerRow.innerHTML = this._headerRowHTML();
 
         this.itemCount = data.items.length;
         for (let i = 1; i < data.items.length; i++) {
@@ -430,6 +443,9 @@ class BillSplitter {
             const ctrl = document.querySelector('.settings');
             if (ctrl) ctrl.style.display = 'none';
 
+            const printBtn = document.querySelector('.btn-print');
+            if (printBtn) printBtn.style.display = 'none';
+
             const table = document.querySelector('.bill-table');
 
             table.querySelectorAll('th.col-add, th.col-action').forEach(el => el.remove());
@@ -448,7 +464,8 @@ class BillSplitter {
                 }
             }
 
-            document.querySelectorAll('input, button').forEach(el => {
+            document.querySelectorAll('.app input, .app button').forEach(el => {
+                if (el.closest('.btn-new')) return;
                 el.disabled = true;
                 el.style.cursor = 'default';
             });
@@ -466,14 +483,7 @@ class BillSplitter {
     copyLink() {
         const inp = document.getElementById('shareLink');
         inp.select();
-
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(inp.value).catch(() => {
-                document.execCommand('copy');
-            });
-        } else {
-            document.execCommand('copy');
-        }
+        this._copyToClipboard(inp.value);
 
         const btn = document.getElementById('copyBtn');
         const orig = btn.textContent;
@@ -488,26 +498,7 @@ class BillSplitter {
     }
 
     clearAll() {
-        if (!this.isOwner) return;
-        if (!confirm('Clear all data? This cannot be undone.')) return;
-
-        document.getElementById('tableBody').innerHTML = '';
-        this.personCount = 0;
-        this.itemCount = 1;
-        this.currentBillId = null;
-
-        const headerRow = document.getElementById('headerRow');
-        headerRow.innerHTML = `
-            <th class="col-name">Person</th>
-            <th class="col-item" contenteditable="true">Item 1</th>
-            <th class="col-add no-print"><button onclick="BillSplitter.instance.addItem()" aria-label="Add item">+</button></th>
-            <th class="col-total">Total</th>
-            <th class="col-action no-print"></th>
-        `;
-
-        document.getElementById('serviceRate').value = 10;
-        document.getElementById('gstRate').value = 8;
-
+        if (this.isOwner && !confirm('Clear all data? This cannot be undone.')) return;
         window.location.href = window.location.pathname;
     }
 

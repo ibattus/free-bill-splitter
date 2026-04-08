@@ -176,8 +176,8 @@ body {
 
 .input-wrap input:focus {
     outline: none;
-    border-color: var(--primary);
-    background: #fff;
+    border-color: transparent;
+    background: var(--input-bg);
 }
 
 .input-suffix {
@@ -204,7 +204,7 @@ body {
 .bill-table th {
     background: var(--primary);
     color: #fff;
-    padding: 0.625rem 0.625rem;
+    padding: 0.625rem;
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -259,10 +259,6 @@ body {
     transition: border-color 0.15s, background 0.15s;
 }
 
-.bill-table input:hover {
-    background: transparent;
-}
-
 .bill-table input:focus {
     outline: none;
     border-color: var(--primary);
@@ -271,6 +267,16 @@ body {
 
 .bill-table input.name-input {
     font-weight: 600;
+}
+
+.bill-table input.name-input:focus,
+.bill-table input.amount-input:focus {
+    border-color: transparent;
+    background: transparent;
+}
+
+.bill-table th.col-item:focus {
+    outline: none;
 }
 
 .bill-table input.amount-input {

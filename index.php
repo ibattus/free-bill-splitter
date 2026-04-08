@@ -40,6 +40,7 @@ if ($billData) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
     <title><?php echo $title ? htmlspecialchars($title) : 'Bill Splitter'; ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($desc); ?>">
 <?php if ($title): ?>
@@ -54,7 +55,7 @@ if ($billData) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..800&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=14">
+    <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
     <div class="app">
@@ -65,10 +66,10 @@ if ($billData) {
                     <p class="tagline">Split expenses with your group</p>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn" onclick="BillSplitter.clearAll()" title="New Bill" aria-label="New Bill">
+                    <button class="icon-btn btn-new" onclick="BillSplitter.clearAll()" title="New Bill" aria-label="New Bill">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
-                    <button class="icon-btn" onclick="window.print()" title="Print" aria-label="Print">
+                    <button class="icon-btn btn-print" onclick="window.print()" title="Print" aria-label="Print">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     </button>
                 </div>
@@ -148,6 +149,6 @@ if ($billData) {
         </div>
     </div>
 
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>
