@@ -174,7 +174,7 @@ class BillSplitter {
 
         let cells = '';
         for (let i = 0; i < this.itemCount; i++) {
-            cells += `<td><input type="text" inputmode="decimal" class="bill-table input amount-input" value="0" oninput="BillSplitter.instance._debounceCalc()"></td>`;
+            cells += `<td><input type="text" class="bill-table input amount-input" value="0" oninput="BillSplitter.instance._debounceCalc()"></td>`;
         }
 
         row.innerHTML = `
@@ -229,7 +229,7 @@ class BillSplitter {
         for (const row of rows) {
             const td = document.createElement('td');
             td.className = 'col-item';
-            td.innerHTML = `<input type="text" inputmode="decimal" class="bill-table input amount-input" value="0" oninput="BillSplitter.instance._debounceCalc()">`;
+            td.innerHTML = `<input type="text" class="bill-table input amount-input" value="0" oninput="BillSplitter.instance._debounceCalc()">`;
             row.insertBefore(td, row.querySelector('.col-add'));
         }
 
@@ -445,7 +445,7 @@ class BillSplitter {
         let cells = '';
         for (let i = 0; i < this.itemCount; i++) {
             const v = amounts[i] || '0';
-            cells += `<td class="col-item"><input type="text" inputmode="decimal" class="bill-table input amount-input" value="${v}" oninput="BillSplitter.instance._debounceCalc()"></td>`;
+            cells += `<td class="col-item"><input type="text" class="bill-table input amount-input" value="${v}" oninput="BillSplitter.instance._debounceCalc()"></td>`;
         }
 
         row.innerHTML = `
