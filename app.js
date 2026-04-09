@@ -26,11 +26,6 @@ class BillSplitter {
         document.addEventListener('keydown', (e) => {
             if (e.target.classList.contains('amount-input') && e.key === 'Enter') {
                 e.preventDefault();
-                if (e.target.value.startsWith('/')) {
-                    this._splitAmount(e.target, e.target.value.substring(1));
-                    e.target.value = '';
-                    return;
-                }
                 this._moveNext(e.target);
             }
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -84,36 +79,6 @@ class BillSplitter {
 
         document.getElementById('confirmModal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) this.confirmCancel();
-        });
-
-        document.addEventListener('dblclick', (e) => {
-            if (e.target.classList.contains('amount-input')) {
-                e.target.value = '';
-            }
-        });
-
-        document.addEventListener('contextmenu', (e) => {
-            if (e.target.classList.contains('amount-input')) {
-                e.preventDefault();
-                this._promptSplit(e.target);
-            }
-        });
-
-        this._longPressTimer = null;
-        document.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('amount-input')) {
-                this._longPressTimer = setTimeout(() => {
-                    this._promptSplit(e.target);
-                }, 500);
-            }
-        });
-
-        document.addEventListener('touchend', () => {
-            clearTimeout(this._longPressTimer);
-        });
-
-        document.addEventListener('touchmove', () => {
-            clearTimeout(this._longPressTimer);
         });
     }
 
@@ -645,38 +610,6 @@ class BillSplitter {
         modal.classList.remove('open');
         setTimeout(() => { modal.style.display = 'none'; }, 200);
         this._confirmCallback = null;
-    }
-
-    _promptSplit(input) {
-        const total = prompt('Enter total amount to split across all people:');
-        if (total === null || total.trim() === '') return;
-        this._splitAmount(input, total.trim());
-    }
-
-    _splitAmount(input, totalStr) {
-        const total = parseFloat(totalStr);
-        if (isNaN(total) || total === 0) {
-            this._toast('Invalid amount', 'error');
-            return;
-        }
-
-        const row = input.closest('tr');
-        const inputs = row.querySelectorAll('.amount-input');
-        const colIndex = Array.from(inputs).indexOf(input);
-        if (colIndex === -1) return;
-
-        const tbody = document.getElementById('tableBody');
-        const rows = tbody.children;
-        const perPerson = total / rows.length;
-
-        rows.forEach(r => {
-            const inputs = r.querySelectorAll('.amount-input');
-            if (inputs[colIndex]) {
-                inputs[colIndex].value = perPerson.toFixed(2);
-            }
-        });
-
-        this.calculate();
     }
 
     async _saveSilent() {
