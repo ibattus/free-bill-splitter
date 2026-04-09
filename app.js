@@ -5,6 +5,7 @@ class BillSplitter {
         this.currentBillId = null;
         this.isOwner = true;
         this._calcTimer = null;
+        this._confirmCallback = null;
         this._init();
     }
 
@@ -31,7 +32,11 @@ class BillSplitter {
                 e.preventDefault();
                 this.saveBill();
             }
-            if (e.key === 'Escape') this.closeModal();
+            if (e.key === 'Escape') {
+                this.closeModal();
+                this.closeImageModal();
+                this.confirmCancel();
+            }
         });
 
         document.addEventListener('click', (e) => {
@@ -50,13 +55,30 @@ class BillSplitter {
         });
 
         document.addEventListener('focus', (e) => {
-            if (e.target.classList.contains('amount-input')) {
+            if (e.target.tagName === 'INPUT') {
                 setTimeout(() => e.target.select(), 0);
+            }
+            if (e.target.contentEditable === 'true') {
+                setTimeout(() => {
+                    const range = document.createRange();
+                    range.selectNodeContents(e.target);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }, 0);
             }
         }, true);
 
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) this.closeModal();
+        });
+
+        document.getElementById('imageModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.closeImageModal();
+        });
+
+        document.getElementById('confirmModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.confirmCancel();
         });
     }
 
@@ -335,6 +357,7 @@ class BillSplitter {
 
         const url = `${window.location.origin}${window.location.pathname}?${billId}`;
         this._copyToClipboard(url);
+        history.pushState(null, '', `?${billId}`);
 
         this._toast(serverOk ? 'Link copied to clipboard' : 'Bill saved locally (server unavailable)', serverOk ? 'success' : 'info');
 
@@ -498,8 +521,122 @@ class BillSplitter {
     }
 
     clearAll() {
-        if (this.isOwner && !confirm('Clear all data? This cannot be undone.')) return;
-        window.location.href = window.location.pathname;
+        if (this.isOwner) {
+            this._showConfirm('Clear All Data?', 'This cannot be undone.', 'Clear', () => {
+                window.location.href = window.location.pathname;
+            });
+        } else {
+            window.location.href = window.location.pathname;
+        }
+    }
+
+    async exportImage() {
+        if (!this.isOwner) return;
+        await this._saveSilent();
+        if (!this.currentBillId) {
+            this._toast('Could not save bill', 'error');
+            return;
+        }
+
+        const base = window.location.pathname.replace(/[^/]*$/, '');
+        const imgUrl = `${window.location.origin}${base}og-image.php?id=${this.currentBillId}&t=${Date.now()}`;
+        const img = document.getElementById('previewImg');
+        img.src = imgUrl;
+
+        const modal = document.getElementById('imageModal');
+        modal.style.display = '';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => modal.classList.add('open'));
+        });
+    }
+
+    async copyImage() {
+        const base = window.location.pathname.replace(/[^/]*$/, '');
+        const imgUrl = `${window.location.origin}${base}og-image.php?id=${this.currentBillId}&t=${Date.now()}`;
+        try {
+            const res = await fetch(imgUrl);
+            const blob = await res.blob();
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            const btn = document.getElementById('copyImgBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = 'Copied!';
+            setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        } catch {
+            this._toast('Copy failed - try downloading instead', 'error');
+        }
+    }
+
+    downloadImage() {
+        const base = window.location.pathname.replace(/[^/]*$/, '');
+        const imgUrl = `${window.location.origin}${base}og-image.php?id=${this.currentBillId}&t=${Date.now()}`;
+        const a = document.createElement('a');
+        a.href = imgUrl;
+        a.download = `bill-${this.currentBillId}.png`;
+        a.click();
+    }
+
+    closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('open');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+    }
+
+    _showConfirm(title, desc, okText, callback) {
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmDesc').textContent = desc;
+        document.getElementById('confirmOk').textContent = okText;
+        this._confirmCallback = callback;
+
+        const modal = document.getElementById('confirmModal');
+        modal.style.display = '';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => modal.classList.add('open'));
+        });
+    }
+
+    confirmOk() {
+        const modal = document.getElementById('confirmModal');
+        modal.classList.remove('open');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+        if (this._confirmCallback) {
+            this._confirmCallback();
+            this._confirmCallback = null;
+        }
+    }
+
+    confirmCancel() {
+        const modal = document.getElementById('confirmModal');
+        if (!modal.classList.contains('open')) return;
+        modal.classList.remove('open');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+        this._confirmCallback = null;
+    }
+
+    async _saveSilent() {
+        const billId = this.currentBillId || this._generateId();
+        const data = this._collectData();
+
+        if (!this.currentBillId) {
+            this.currentBillId = billId;
+            this._markOwner(billId);
+            history.pushState(null, '', `?${billId}`);
+        }
+
+        const local = JSON.parse(localStorage.getItem('billSplitterData') || '{}');
+        local[billId] = data;
+        localStorage.setItem('billSplitterData', JSON.stringify(local));
+
+        try {
+            await fetch(this._getApiUrl(), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...data, billId })
+            });
+        } catch (e) {
+            console.log('Silent save failed:', e);
+        }
+
+        this.currentBillId = billId;
     }
 
     static addPerson() { BillSplitter.instance?.addPerson(); }
@@ -508,6 +645,12 @@ class BillSplitter {
     static clearAll() { BillSplitter.instance?.clearAll(); }
     static copyLink() { BillSplitter.instance?.copyLink(); }
     static closeModal() { BillSplitter.instance?.closeModal(); }
+    static exportImage() { BillSplitter.instance?.exportImage(); }
+    static copyImage() { BillSplitter.instance?.copyImage(); }
+    static downloadImage() { BillSplitter.instance?.downloadImage(); }
+    static closeImageModal() { BillSplitter.instance?.closeImageModal(); }
+    static confirmOk() { BillSplitter.instance?.confirmOk(); }
+    static confirmCancel() { BillSplitter.instance?.confirmCancel(); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

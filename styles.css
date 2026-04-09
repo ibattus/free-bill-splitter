@@ -178,6 +178,7 @@ body {
     outline: none;
     border-color: transparent;
     background: var(--input-bg);
+    box-shadow: none;
 }
 
 .input-suffix {
@@ -639,26 +640,65 @@ body {
     .share-link {
         flex-direction: column;
     }
+
+    .image-actions {
+        flex-direction: column;
+    }
 }
 
-/* Print */
-@media print {
-    .no-print { display: none !important; }
-    body { background: #fff; }
-    .app { max-width: none; padding: 0; }
-    .app-header, .settings, .table-card {
-        box-shadow: none;
-        border: 1px solid #e4e4e7;
-    }
-    .bill-table th {
-        background: #f4f4f5 !important;
-        color: #18181b !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-    .footer-row {
-        background: #fafafa !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
+.modal-image {
+    max-width: 520px;
+}
+
+.image-preview {
+    margin: 0.75rem 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--border);
+}
+
+.image-preview img {
+    width: 100%;
+    display: block;
+}
+
+.image-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.image-actions .btn {
+    flex: 1;
+}
+
+.confirm-icon {
+    background: #fef3c7 !important;
+    color: #d97706 !important;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+}
+
+.btn-cancel {
+    flex: 1;
+    background: var(--bg);
+    color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+    background: #e4e4e7;
+}
+
+.btn-danger {
+    flex: 1;
+    background: var(--danger);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
 }

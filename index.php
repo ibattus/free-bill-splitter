@@ -49,7 +49,7 @@ if ($billData) {
     <meta property="og:description" content="<?php echo $descAttr; ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Bill Splitter">
-    <meta property="og:image" content="https://bill.ibattus.com/og-image.php<?php echo $billId ? '?' . htmlspecialchars($billId) : ''; ?>">
+    <meta property="og:image" content="https://bill.ibattus.com/og-image.php<?php echo $billId ? '?id=' . htmlspecialchars($billId) : ''; ?>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,8 +69,8 @@ if ($billData) {
                     <button class="icon-btn btn-new" onclick="BillSplitter.clearAll()" title="New Bill" aria-label="New Bill">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
-                    <button class="icon-btn btn-print" onclick="window.print()" title="Print" aria-label="Print">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <button class="icon-btn btn-print" onclick="BillSplitter.exportImage()" title="Export Image" aria-label="Export Image">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
                 </div>
             </div>
@@ -146,6 +146,40 @@ if ($billData) {
                 <button class="btn btn-copy" id="copyBtn" onclick="BillSplitter.copyLink()">Copy</button>
             </div>
             <button class="btn btn-close" onclick="BillSplitter.closeModal()">Done</button>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="imageModal">
+        <div class="modal modal-image">
+            <h2 class="modal-title">Export Image</h2>
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImg" alt="Bill preview">
+            </div>
+            <div class="image-actions">
+                <button class="btn btn-copy" id="copyImgBtn" onclick="BillSplitter.copyImage()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy
+                </button>
+                <button class="btn btn-save" id="downloadImgBtn" onclick="BillSplitter.downloadImage()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download
+                </button>
+            </div>
+            <button class="btn btn-close" onclick="BillSplitter.closeImageModal()">Done</button>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="confirmModal">
+        <div class="modal modal-confirm">
+            <div class="modal-icon confirm-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2 class="modal-title" id="confirmTitle">Clear All Data?</h2>
+            <p class="modal-desc" id="confirmDesc">This cannot be undone.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-cancel" onclick="BillSplitter.confirmCancel()">Cancel</button>
+                <button class="btn btn-danger" id="confirmOk" onclick="BillSplitter.confirmOk()">Clear</button>
+            </div>
         </div>
     </div>
 
