@@ -12,6 +12,19 @@ if (preg_match('/^[a-zA-Z0-9]{7}$/', $billId)) {
 $font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
 $fontBold = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 
+function evaluateMath($expr) {
+    if ($expr === '' || $expr === null) return 0;
+    $expr = trim($expr);
+    $clean = preg_replace('/[^0-9+\-*/.() ]/', '', $expr);
+    if ($clean === '') return 0;
+    try {
+        $result = eval("return $clean;");
+        return is_numeric($result) ? (float)$result : 0;
+    } catch (Exception $e) {
+        return 0;
+    }
+}
+
 if ($billData) {
     $svcRate = floatval($billData['serviceRate'] ?? 0);
     $gstRate = floatval($billData['gstRate'] ?? 0);
@@ -88,7 +101,7 @@ if ($billData) {
 
         $sub = 0;
         for ($i = 0; $i < $numItems; $i++) {
-            $val = floatval($p['amounts'][$i] ?? 0) ?: 0;
+            $val = evaluateMath($p['amounts'][$i] ?? '0');
             $sub += $val;
             $valStr = number_format($val, 2);
             $bbox = imagettfbbox(22, 0, $font, $valStr);
