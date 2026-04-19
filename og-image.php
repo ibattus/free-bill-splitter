@@ -20,15 +20,17 @@ function evaluateMath($expr) {
         return (float)$expr;
     }
     
-    if (preg_match('/^[\d+\-*/.() ]+$/', $expr)) {
+    if (preg_match('~^[\d+*/.() \-]+$~', $expr)) {
         try {
             $result = eval("return ($expr);");
             return is_numeric($result) ? (float)$result : 0;
         } catch (Throwable $e) {
+            error_log("Math eval error: " . $e->getMessage());
             return 0;
         }
     }
     
+    error_log("Math expression invalid: $expr");
     return 0;
 }
 
