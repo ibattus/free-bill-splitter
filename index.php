@@ -1,4 +1,19 @@
 <?php
+function evaluateMath($expr) {
+    if ($expr === '' || $expr === null) return 0;
+    $expr = trim($expr);
+    if (is_numeric($expr)) return (float)$expr;
+    if (preg_match('~^[\d+*/.() \-]+$~', $expr)) {
+        try {
+            $result = eval("return ($expr);");
+            return is_numeric($result) ? (float)$result : 0;
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+    return 0;
+}
+
 $billId = '';
 $billData = null;
 $params = array_keys($_GET);
@@ -22,7 +37,7 @@ if ($billData) {
     $summary = [];
     foreach ($billData['people'] as $p) {
         $sub = 0;
-        foreach ($p['amounts'] as $a) $sub += floatval($a) ?: 0;
+        foreach ($p['amounts'] as $a) $sub += evaluateMath($a);
         $svc = $sub * ($svcRate / 100);
         $gst = ($sub + $svc) * ($gstRate / 100);
         $total = $sub + $svc + $gst;
