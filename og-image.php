@@ -15,14 +15,21 @@ $fontBold = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 function evaluateMath($expr) {
     if ($expr === '' || $expr === null) return 0;
     $expr = trim($expr);
-    $clean = preg_replace('/[^0-9+\-*/.() ]/', '', $expr);
-    if ($clean === '') return 0;
-    try {
-        $result = eval("return $clean;");
-        return is_numeric($result) ? (float)$result : 0;
-    } catch (Exception $e) {
-        return 0;
+    
+    if (is_numeric($expr)) {
+        return (float)$expr;
     }
+    
+    if (preg_match('/^[\d+\-*/.() ]+$/', $expr)) {
+        try {
+            $result = eval("return ($expr);");
+            return is_numeric($result) ? (float)$result : 0;
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+    
+    return 0;
 }
 
 if ($billData) {
