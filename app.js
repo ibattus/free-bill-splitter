@@ -268,6 +268,8 @@ class BillSplitter {
         const svcRate = parseFloat(document.getElementById('serviceRate').value) || 0;
         const gstRate = parseFloat(document.getElementById('gstRate').value) || 0;
 
+        console.log('Calculate using rates - service:', svcRate, 'gst:', gstRate, 'from DOM:', document.getElementById('serviceRate').value, document.getElementById('gstRate').value);
+
         let tSub = 0, tSvc = 0, tGst = 0;
 
         const rows = document.getElementById('tableBody').children;
@@ -329,6 +331,8 @@ class BillSplitter {
 
         const billId = this.currentBillId || this._generateId();
         const data = this._collectData();
+
+        console.log('Saving bill with rates - service:', data.serviceRate, 'gst:', data.gstRate);
 
         if (!this.currentBillId) {
             this.currentBillId = billId;
@@ -410,8 +414,10 @@ class BillSplitter {
         this.personCount = 0;
         this.itemCount = 1;
 
-        document.getElementById('serviceRate').value = data.serviceRate || 10;
-        document.getElementById('gstRate').value = data.gstRate || 8;
+        document.getElementById('serviceRate').value = data.serviceRate ?? 10;
+        document.getElementById('gstRate').value = data.gstRate ?? 8;
+
+        console.log('Loaded rates - service:', document.getElementById('serviceRate').value, 'gst:', document.getElementById('gstRate').value, 'from data:', data.serviceRate, data.gstRate);
 
         const headerRow = document.getElementById('headerRow');
         headerRow.innerHTML = this._headerRowHTML();
@@ -615,6 +621,8 @@ class BillSplitter {
     async _saveSilent() {
         const billId = this.currentBillId || this._generateId();
         const data = this._collectData();
+
+        console.log('Silent saving bill with rates - service:', data.serviceRate, 'gst:', data.gstRate);
 
         if (!this.currentBillId) {
             this.currentBillId = billId;
